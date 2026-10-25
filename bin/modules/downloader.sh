@@ -87,27 +87,34 @@ handle_download() {
         esac
     done
 
+    # ------- Offline Embed -------
+    # This mode operates on an existing folder and never downloads from the URL.
+    if [[ "$CHOICE" == "12" ]]; then
+        read -r -p "Folder containing the existing video [current directory]: " EMBED_DIR
+        EMBED_DIR="${EMBED_DIR:-$PWD}"
+        if [[ ! -d "$EMBED_DIR" ]]; then
+            echo "Error: folder does not exist: $EMBED_DIR"
+            return 1
+        fi
+        cd "$EMBED_DIR" || return 1
+        echo "Merging available metadata into an existing video..."
+        python3 "$PYTHON_HELPER" embed
+        return $?
+    fi
+
     # --- Create folder for playlist/video --- #
     [[ $PLAYLIST_TITLE == "NA" ]] && PLAYLIST_TITLE=$(basename "${URL%%\?*}")
     PLAYLIST_TITLE="$HOME/Desktop/$PLAYLIST_TITLE"
     mkdir -p "$PLAYLIST_TITLE"
-    cd "$PLAYLIST_TITLE" || exit
-    
+    cd "$PLAYLIST_TITLE" || return 1
+
     LINK_DIR="$PLAYLIST_TITLE/link.txt"
     touch "$LINK_DIR"
-    
+
     if [[ $CHOICE == 1 ]]; then
         echo -e "$URL  -- with format [ $FORMAT ] and $EXTRA\n\n" >> "$LINK_DIR"
     else
         echo -e "$URL  -- with format at [ $CHOICE ]th and $EXTRA position\n\n" >> "$LINK_DIR"
-    fi
-    
-    # ------- Offline Embed -------
-    # Option 12 edits an already-downloaded file; do not fetch info or download.
-    if [[ "$CHOICE" == "12" ]]; then
-        echo "Merging available metadata into an existing video..."
-        python3 "$PYTHON_HELPER" embed
-        return $?
     fi
 
     # --- Show duration(s) before download ---
