@@ -2,7 +2,7 @@
 # Part 2: Input & Playlist Handler Module
 
 handle_input() {
-    PLAYLIST_TITLE="NA"
+    [[ "$IS_KEYWORD" == "1" ]] || PLAYLIST_TITLE="NA"
     COUNT=0
     VID_SELECT=""
     NUM=""
@@ -27,7 +27,7 @@ handle_input() {
 
                 if [ ${#META[@]} -gt 0 ]; then
                     PLAYLIST_TITLE=$(echo "${META[0]}" | cut -d"|" -f1)
-                    printf "%s\n" "${META[@]#*||}" > $TITLES_FILE
+                    printf "%s\n" "${META[@]#*||}" > "$TITLES_FILE"
                     COUNT=$(wc -l < $TITLES_FILE)
                     break
                 else
@@ -47,11 +47,11 @@ handle_input() {
         echo "   Contains $COUNT videos."
         echo
 
-        head -20 $TITLES_FILE | nl -w3 -s") "
+        head -20 "$TITLES_FILE" | nl -w3 -s") "
         if [ "$COUNT" -gt 20 ]; then
             echo "   ... ($((COUNT-20)) more videos)"
             read -p "Show full list? (y/n): " SHOWALL
-            [[ "$SHOWALL" =~ ^[Yy]$ ]] && nl -w3 -s") " $TITLES_FILE
+            [[ "$SHOWALL" =~ ^[Yy]$ ]] && nl -w3 -s") " "$TITLES_FILE"
         fi
         echo
 
