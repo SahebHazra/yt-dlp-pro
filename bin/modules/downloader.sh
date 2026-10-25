@@ -26,6 +26,7 @@ handle_download() {
         read -p "Enter choice | Want SUB [e.g. 2 y] : " CHOICE EXTRA
         echo 
 
+        FORMAT=""
         AUDIOs="139-drc/139/139-1/249-drc/249/249-1/250/250-1/251/140"
         EXTRA_OPTS=()
         CHAPTER_OPTS=()
@@ -54,7 +55,8 @@ handle_download() {
         case $CHOICE in
             1) 
                 echo "Fetching available formats..."
-                yt-dlp -i -F $VID_SELECT "$URL"   
+                read -r -a VID_SELECT_ARGS <<< "$VID_SELECT"
+                yt-dlp -i -F "${VID_SELECT_ARGS[@]}" "$URL"   
                 read -p "Enter format code (e.g., 136+140): " FORMAT
                 break 
                 ;;
@@ -101,12 +103,13 @@ handle_download() {
     fi
     
     # ------- Offline Embed -------
-    if [[ $CHOICE == 0 && -z "$EXTRA" ]]; then 
-        echo "Merging JSON offline..."
+    # Option 12 edits an already-downloaded file; do not fetch info or download.
+    if [[ "$CHOICE" == "12" ]]; then
+        echo "Merging available metadata into an existing video..."
         python3 "$PYTHON_HELPER" embed
-        return 0
+        return $?
     fi
-    
+
     # --- Show duration(s) before download ---
     echo
     echo "⏳ Fetching duration info..."
@@ -119,10 +122,13 @@ handle_download() {
     RETRY_DELAY=6
     ATTEMPT=1
 
-    while [ $ATTEMPT -le $MAX_RETRIES ]; do
+    read -r -a VID_SELECT_ARGS <<< "$VID_SELECT"
+    DOWNLOAD_OPTS=("${CHAPTER_OPTS[@]}" "${VID_SELECT_ARGS[@]}" "${EXTRA_OPTS[@]}")
+    [[ -n "$FORMAT" ]] && DOWNLOAD_OPTS+=(-f "$FORMAT")
+
+    while [ "$ATTEMPT" -le "$MAX_RETRIES" ]; do
         echo "Attempt $ATTEMPT of $MAX_RETRIES..."
-        if yt-dlp --continue -i "${CHAPTER_OPTS[@]}" $VID_SELECT ${FORMAT:+-f "$FORMAT"} \
-            "${EXTRA_OPTS[@]}" \
+        if yt-dlp --continue -i "${DOWNLOAD_OPTS[@]}" \
            -o "%(playlist_index)s - %(title)s - %(id)s.%(ext)s" "$URL"; then
             echo "✅ Download completed!"
             if [[ "$JSON" != "TRUE" ]]; then
