@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -55,7 +56,7 @@ def show_info():
 
     cmd = [
         "yt-dlp", "--dump-single-json", "--no-warnings", "--quiet",
-        *(__import__("shlex").split(vid_select)), url,
+        *(shlex.split(vid_select)), url,
     ]
     result = subprocess.run(cmd, check=True, capture_output=True, text=True)
     info = json.loads(result.stdout)
