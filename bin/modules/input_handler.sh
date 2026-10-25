@@ -4,6 +4,10 @@
 handle_input() {
     PLAYLIST_TITLE="NA"
     COUNT=0
+    VID_SELECT=""
+    NUM=""
+    RANGE_INPUT=""
+    TITLES_FILE="$(mktemp "${TMPDIR:-/tmp}/yt-titles.XXXXXX")"
     
     if [ "$IS_KEYWORD" != 1 ]; then
         while true; do
@@ -23,8 +27,8 @@ handle_input() {
 
                 if [ ${#META[@]} -gt 0 ]; then
                     PLAYLIST_TITLE=$(echo "${META[0]}" | cut -d"|" -f1)
-                    printf "%s\n" "${META[@]#*||}" > /tmp/yt_titles.txt
-                    COUNT=$(wc -l < /tmp/yt_titles.txt)
+                    printf "%s\n" "${META[@]#*||}" > $TITLES_FILE
+                    COUNT=$(wc -l < $TITLES_FILE)
                     break
                 else
                     echo "⚠ Something Went Wrong!"
@@ -43,11 +47,11 @@ handle_input() {
         echo "   Contains $COUNT videos."
         echo
 
-        head -20 /tmp/yt_titles.txt | nl -w3 -s") "
+        head -20 $TITLES_FILE | nl -w3 -s") "
         if [ "$COUNT" -gt 20 ]; then
             echo "   ... ($((COUNT-20)) more videos)"
             read -p "Show full list? (y/n): " SHOWALL
-            [[ "$SHOWALL" =~ ^[Yy]$ ]] && nl -w3 -s") " /tmp/yt_titles.txt
+            [[ "$SHOWALL" =~ ^[Yy]$ ]] && nl -w3 -s") " $TITLES_FILE
         fi
         echo
 
@@ -77,11 +81,16 @@ handle_input() {
     elif [ "$MODE" == "2" ]; then
         echo "⚠ You are about to download the ENTIRE playlist ($COUNT videos)."
         read -p "Are you sure? (y/n): " CONFIRM
-        [[ ! "$CONFIRM" =~ ^[Yy]$ ]] && echo "❌ Cancelled." && return 1
+        if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+            echo "❌ Cancelled."
+            rm -f "$TITLES_FILE"
+            return 1
+        fi
     elif [ "$MODE" == "3" ]; then
         read -p "Enter video numbers (e.g. 5,6,7 or 10-15): " RANGE_INPUT
         VID_SELECT="--playlist-items $RANGE_INPUT"
     fi
     
+    rm -f "$TITLES_FILE"
     return 0
 }
