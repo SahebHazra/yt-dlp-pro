@@ -4,7 +4,7 @@
 
 [![Bash](https://img.shields.io/badge/Language-Bash-green.svg)](https://www.gnu.org/software/bash/)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
-[![DevOps Portfolio](https://img.shields.io/badge/Portfolio-DevOps%20Project-orange.svg)]()
+[![Linux](https://img.shields.io/badge/Platform-Linux-FCC624?style=flat&logo=linux&logoColor=black)](https://www.kernel.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
@@ -61,34 +61,38 @@ Please check requirements.md for full details. Quick overview:
 
 **`yt-dlp-pro` is currently a Linux-first CLI application.** Its main workflow uses Bash scripts and Linux installation paths, so it is not a native Windows application and the Linux installer should not be run directly from PowerShell or CMD.
 
-### Using it on Windows with WSL 2 (recommended)
+### (Option 1) Using it on Linux with Native support (recommended for Linux users)
+
+### (Option 2) Using it on Windows Git Bash
+
+### (Option 3 Using it on Windows with WSL 2
 
 You can run the Linux version on Windows through **Windows Subsystem for Linux (WSL 2)** with an Ubuntu distribution:
 
 1. Open **PowerShell as Administrator** and install WSL:
-   ```powershell
+```powershell
 wsl --install -d Ubuntu
 ```
 2. Restart if Windows asks, then open **Ubuntu** from the Start menu and complete its first-time setup.
 3. In the Ubuntu terminal, install the dependencies:
-   ```bash
+```bash
 sudo apt update
 sudo apt install -y git make python3 ffmpeg mpv yt-dlp
 ```
 4. Clone and install the project inside the Ubuntu terminal:
-   ```bash
+```bash
 git clone https://github.com/SahebHazra/yt-dlp-pro.git
 cd yt-dlp-pro
 chmod +x install-ytd.sh
 sudo ./install-ytd.sh
 ```
 5. Start it from Ubuntu:
-   ```bash
+```bash
 ytdlp-pro
 ```
 
 **Notes**
-- Run these Linux commands inside the **Ubuntu/WSL terminal**, not directly in PowerShell or CMD.
+- Run these Linux commands inside the **Ubuntu/Git Bash/WSL terminal**, not directly in PowerShell or CMD.
 - Downloads are saved under the Linux user's `~/Desktop/` path inside WSL. This is not necessarily your Windows Desktop; you can access WSL files through Windows File Explorer using `\\wsl$\Ubuntu\home\<your-linux-username>\`.
 - `mpv` previews may depend on your WSL GUI support and configuration. You can still use the direct URL/playlist workflow if previews are unavailable.
 - **Native Windows support is not currently implemented or tested.** Running it directly in PowerShell/CMD would require a Windows-specific launcher, path handling, dependency setup, and testing.
