@@ -57,7 +57,14 @@ if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
             apt update && apt install -y "${APT_TO_INSTALL[@]}"
         fi
         if [ "$INSTALL_YT_DLP" = true ]; then
-            python3 -m pip install --upgrade --user yt-dlp || pip3 install --upgrade --user yt-dlp || apt install -y yt-dlp || true
+            if ! apt install -y yt-dlp; then
+                echo "❌ Could not install yt-dlp. Install it manually, then rerun this script."
+                exit 1
+            fi
+            if ! command -v yt-dlp &>/dev/null && ! python3 -m yt_dlp --version &>/dev/null; then
+                echo "❌ yt-dlp installation could not be verified."
+                exit 1
+            fi
         fi
     else
         echo "⚠ Warning: Some features may not work without required packages."
@@ -73,31 +80,48 @@ echo "============================================"
 INSTALL_DIR="/usr/local/lib/yt-dlp-pro"
 BIN_LINK="/usr/local/bin/ytdlp-pro"
 
-# Clean up old installations if any
-if [ -d "$INSTALL_DIR" ]; then
-    echo "🔄 Updating existing installation in $INSTALL_DIR..."
-    rm -rf "$INSTALL_DIR"
+# Stage the new version first so a failed copy does not destroy the current install.
+STAGING_DIR="${INSTALL_DIR}.new.$"
+BACKUP_DIR="${INSTALL_DIR}.backup.$"
+WRAPPER_TMP="${BIN_LINK}.new.$"
+cleanup() {
+    rm -rf "$STAGING_DIR"
+    rm -f "$WRAPPER_TMP"
+}
+trap cleanup EXIT
+
+mkdir -p "$STAGING_DIR" || exit 1
+echo "📂 Staging project files..."
+if ! cp -r bin python "$STAGING_DIR/"; then
+    echo "❌ Could not copy project files; existing installation was left unchanged."
+    exit 1
 fi
+chmod +x "$STAGING_DIR/bin/ytdlp-pro" "$STAGING_DIR/bin/modules/"*.sh
 
-# Create system lib directory
-mkdir -p "$INSTALL_DIR"
-
-# Copy bin modules and python helper into lib directory
-echo "📂 Copying project files to $INSTALL_DIR..."
-cp -r bin "$INSTALL_DIR/"
-cp -r python "$INSTALL_DIR/"
-
-# Create a robust wrapper script in /usr/local/bin/ytdlp-pro
-echo "🔗 Creating global symlink / command..."
-cat << 'EOF' > "$BIN_LINK"
+cat > "$WRAPPER_TMP" << 'EOF'
 #!/bin/bash
 # Global launcher for yt-dlp-pro
 exec /usr/local/lib/yt-dlp-pro/bin/ytdlp-pro "$@"
 EOF
+chmod +x "$WRAPPER_TMP" || exit 1
 
-# Make the wrapper executable
-chmod +x "$BIN_LINK"
-chmod -R +x "$INSTALL_DIR/bin/"
+# Move the old install aside and roll back if activating the new version fails.
+if [ -d "$INSTALL_DIR" ]; then
+    mv "$INSTALL_DIR" "$BACKUP_DIR" || exit 1
+fi
+if ! mv "$STAGING_DIR" "$INSTALL_DIR"; then
+    [ -d "$BACKUP_DIR" ] && mv "$BACKUP_DIR" "$INSTALL_DIR"
+    echo "❌ Could not activate the new installation."
+    exit 1
+fi
+if ! mv "$WRAPPER_TMP" "$BIN_LINK"; then
+    rm -rf "$INSTALL_DIR"
+    [ -d "$BACKUP_DIR" ] && mv "$BACKUP_DIR" "$INSTALL_DIR"
+    echo "❌ Could not install the launcher; restored the previous version."
+    exit 1
+fi
+rm -rf "$BACKUP_DIR"
+trap - EXIT
 
 echo
 echo "============================================"
