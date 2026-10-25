@@ -97,8 +97,13 @@ handle_download() {
             return 1
         fi
         cd "$EMBED_DIR" || return 1
-        echo "Merging available metadata into an existing video..."
-        python3 "$PYTHON_HELPER" embed
+        read -r -p "Video filename to update: " EMBED_VIDEO
+        if [[ -z "$EMBED_VIDEO" || ! -f "$EMBED_VIDEO" ]]; then
+            echo "Error: enter an existing video filename in that folder."
+            return 1
+        fi
+        echo "Merging available metadata into $EMBED_VIDEO..."
+        python3 "$PYTHON_HELPER" embed "$EMBED_VIDEO"
         return $?
     fi
 
@@ -145,7 +150,7 @@ handle_download() {
 
                 if [[ -n "$VIDEO_FILE" ]]; then
                     echo "Merging JSON into video..."
-                    python3 "$PYTHON_HELPER" embed
+                    python3 "$PYTHON_HELPER" embed "$VIDEO_FILE"
                 else
                     echo "Skipping metadata merge (no video downloaded)."
                 fi
