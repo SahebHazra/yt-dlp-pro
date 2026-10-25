@@ -23,7 +23,7 @@ yt-dlp-pro/
 │       └── downloader.sh      # Part 3: Format Selection, Retries & Core Download Engine
 ├── python/
 │   └── helper.py              # Python Helper: Chapter parsing & FFmpeg metadata embedding
-├── install-ytdu.sh            # Automated Dependency Installer & System Symlinker
+├── install-ytd.sh            # Automated Dependency Installer & System Symlinker
 ├── Makefile                   # Build automation (install / uninstall)
 ├── requirements.md            # Detailed system dependencies documentation
 └── README.md                  # Project Documentation
@@ -33,8 +33,8 @@ yt-dlp-pro/
 You can automatically check and install dependencies using our automated installer script:
 
 ```bash
-chmod +x install-ytdu.sh
-sudo ./install-ytdu.sh
+chmod +x install-ytd.sh
+sudo ./install-ytd.sh
 ```
 
 
@@ -65,8 +65,8 @@ Method 1: Automated Installer
 ```bash
 git clone https://github.com/SahebHazra/yt-dlp-pro.git
 cd yt-dlp-pro
-chmod +x install-ytdu.sh
-sudo ./install-ytdu.sh
+chmod +x install-ytd.sh
+sudo ./install-ytd.sh
 ```
 
 Method 2: Using Makefile
