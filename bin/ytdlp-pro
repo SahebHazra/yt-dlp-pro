@@ -35,8 +35,14 @@ while true; do
     fi
 
     if [ "$MODE_SELECT" == "2" ]; then
-        handle_search
-        [[ $END -eq 1 ]] && continue
+        if ! handle_search; then
+            # Search cancellation and failed/empty searches return to the main menu.
+            continue
+        fi
+    elif [[ -n "$MODE_SELECT" && "$MODE_SELECT" != "1" ]]; then
+        echo "Invalid menu choice."
+        read -p "Press Enter to continue..."
+        continue
     fi
 
     if [ "$END" != 1 ]; then
