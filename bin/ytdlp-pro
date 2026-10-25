@@ -1,0 +1,54 @@
+#!/bin/bash
+# ============================================================
+# Project Name: yt-dlp-pro
+# Description: Professional Lightweight YouTube Downloader
+# Author: Saheb
+# ============================================================
+
+# Resolve script directory to source modules accurately
+BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source our 3 modular components
+source "$BASE_DIR/modules/search.sh"
+source "$BASE_DIR/modules/input_handler.sh"
+source "$BASE_DIR/modules/downloader.sh"
+
+while true; do
+    clear
+    echo "============================================"
+    echo "   YouTube Downloader (Pro + Lightweight)   "
+    echo "============================================"
+    echo " "
+    echo "1) Download from URL/playlist"
+    echo "2) Search and download"
+    echo "Q/q) Exit"
+    echo " "
+    read -p "Enter [1/2] | Default (1): " MODE_SELECT
+
+    END=0
+    IS_KEYWORD=0
+    URL=""
+
+
+    if [[ "$MODE_SELECT" =~ ^[Qq]$ ]]; then
+        echo "👋 Exiting..." && break
+    fi
+
+    if [ "$MODE_SELECT" == "2" ]; then
+        handle_search
+        [[ $END -eq 1 ]] && continue
+    fi
+
+    if [ "$END" != 1 ]; then
+        handle_input || continue
+        [[ $END -eq 1 ]] && continue
+        handle_download
+    fi
+
+    
+    echo "======================================"
+    echo ""
+    echo "Task completed."
+    read -p "    Any Key to Continue || 909 for Exit : " NEXT
+    [ "$NEXT" == "909" ] && echo "👋 Exiting..." && break
+done
