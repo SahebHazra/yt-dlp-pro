@@ -67,8 +67,13 @@ def show_info():
     print(f"Size     : {size / 1024 / 1024:.1f} MB" if size else "Size     : Unknown")
 
 
-def embed():
-    video = find_video()
+def embed(video_name=None):
+    if video_name:
+        video = Path(video_name)
+        if not video.is_file() or video.suffix.lower() not in VIDEO_EXTENSIONS:
+            raise FileNotFoundError(f"Video file not found or unsupported: {video_name}")
+    else:
+        video = find_video()
     if video is None:
         raise FileNotFoundError("No video found in the current directory")
 
@@ -135,7 +140,7 @@ if __name__ == "__main__":
         if mode == "show-info":
             show_info()
         elif mode == "embed":
-            embed()
+            embed(sys.argv[2] if len(sys.argv) > 2 else None)
         else:
             raise ValueError(f"Unknown mode: {mode}")
     except KeyboardInterrupt:
