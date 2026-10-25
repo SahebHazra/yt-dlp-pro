@@ -26,6 +26,7 @@ handle_download() {
         read -p "Enter choice | Want SUB [e.g. 2 y] : " CHOICE EXTRA
         echo 
 
+        FORMAT=""
         AUDIOs="139-drc/139/139-1/249-drc/249/249-1/250/250-1/251/140"
         EXTRA_OPTS=()
         CHAPTER_OPTS=()
@@ -54,7 +55,8 @@ handle_download() {
         case $CHOICE in
             1) 
                 echo "Fetching available formats..."
-                yt-dlp -i -F $VID_SELECT "$URL"   
+                read -r -a VID_SELECT_ARGS <<< "$VID_SELECT"
+                yt-dlp -i -F "${VID_SELECT_ARGS[@]}" "$URL"   
                 read -p "Enter format code (e.g., 136+140): " FORMAT
                 break 
                 ;;
@@ -85,28 +87,41 @@ handle_download() {
         esac
     done
 
+    # ------- Offline Embed -------
+    # This mode operates on an existing folder and never downloads from the URL.
+    if [[ "$CHOICE" == "12" ]]; then
+        read -r -p "Folder containing the existing video [current directory]: " EMBED_DIR
+        EMBED_DIR="${EMBED_DIR:-$PWD}"
+        if [[ ! -d "$EMBED_DIR" ]]; then
+            echo "Error: folder does not exist: $EMBED_DIR"
+            return 1
+        fi
+        cd "$EMBED_DIR" || return 1
+        read -r -p "Video filename to update: " EMBED_VIDEO
+        if [[ -z "$EMBED_VIDEO" || ! -f "$EMBED_VIDEO" ]]; then
+            echo "Error: enter an existing video filename in that folder."
+            return 1
+        fi
+        echo "Merging available metadata into $EMBED_VIDEO..."
+        python3 "$PYTHON_HELPER" embed "$EMBED_VIDEO"
+        return $?
+    fi
+
     # --- Create folder for playlist/video --- #
     [[ $PLAYLIST_TITLE == "NA" ]] && PLAYLIST_TITLE=$(basename "${URL%%\?*}")
     PLAYLIST_TITLE="$HOME/Desktop/$PLAYLIST_TITLE"
     mkdir -p "$PLAYLIST_TITLE"
-    cd "$PLAYLIST_TITLE" || exit
-    
+    cd "$PLAYLIST_TITLE" || return 1
+
     LINK_DIR="$PLAYLIST_TITLE/link.txt"
     touch "$LINK_DIR"
-    
+
     if [[ $CHOICE == 1 ]]; then
         echo -e "$URL  -- with format [ $FORMAT ] and $EXTRA\n\n" >> "$LINK_DIR"
     else
         echo -e "$URL  -- with format at [ $CHOICE ]th and $EXTRA position\n\n" >> "$LINK_DIR"
     fi
-    
-    # ------- Offline Embed -------
-    if [[ $CHOICE == 0 && -z "$EXTRA" ]]; then 
-        echo "Merging JSON offline..."
-        python3 "$PYTHON_HELPER" embed
-        return 0
-    fi
-    
+
     # --- Show duration(s) before download ---
     echo
     echo "⏳ Fetching duration info..."
@@ -119,10 +134,13 @@ handle_download() {
     RETRY_DELAY=6
     ATTEMPT=1
 
-    while [ $ATTEMPT -le $MAX_RETRIES ]; do
+    read -r -a VID_SELECT_ARGS <<< "$VID_SELECT"
+    DOWNLOAD_OPTS=("${CHAPTER_OPTS[@]}" "${VID_SELECT_ARGS[@]}" "${EXTRA_OPTS[@]}")
+    [[ -n "$FORMAT" ]] && DOWNLOAD_OPTS+=(-f "$FORMAT")
+
+    while [ "$ATTEMPT" -le "$MAX_RETRIES" ]; do
         echo "Attempt $ATTEMPT of $MAX_RETRIES..."
-        if yt-dlp --continue -i "${CHAPTER_OPTS[@]}" $VID_SELECT ${FORMAT:+-f "$FORMAT"} \
-            "${EXTRA_OPTS[@]}" \
+        if yt-dlp --continue -i "${DOWNLOAD_OPTS[@]}" \
            -o "%(playlist_index)s - %(title)s - %(id)s.%(ext)s" "$URL"; then
             echo "✅ Download completed!"
             if [[ "$JSON" != "TRUE" ]]; then
@@ -132,7 +150,7 @@ handle_download() {
 
                 if [[ -n "$VIDEO_FILE" ]]; then
                     echo "Merging JSON into video..."
-                    python3 "$PYTHON_HELPER" embed
+                    python3 "$PYTHON_HELPER" embed "$VIDEO_FILE"
                 else
                     echo "Skipping metadata merge (no video downloaded)."
                 fi
